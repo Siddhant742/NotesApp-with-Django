@@ -2,6 +2,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from .models import Note
 from .serializers import NoteSerializer
+from rest_framework import status
+
 
 
 
@@ -57,21 +59,35 @@ def getNote(request, pk):
 @api_view(['POST'])
 def createNote(request):
     data = request.data
-    note = Note.objects.create(body=data['body'])
-    serializer = NoteSerializer(note, many=False)
-    return Response(serializer.data)
+    body = data.get('body')  # Use get() to handle missing key
+    if body is not None:
+        note = Note.objects.create(body=body)
+        serializer = NoteSerializer(note, many=False)
+        return Response(serializer.data)
+    else:
+        return Response({'error': 'Missing body parameter'}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['PUT'])
 def updateNote(request, pk):
     data = request.data
-    note = Note.objects.get(id = pk)
-    serializer = NoteSerializer(note, many=False)
-    if serializer.is_valid():
-        serializer.save()
-    return Response(serializer.data)
+    body = data.get('body')  # Use get() to handle missing key
+    if body is not None:
+        note = Note.objects.get(id=pk)
+        note.body = body
+        note.save()
+        serializer = NoteSerializer(note, many=False)
+        return Response(serializer.data)
+    else:
+        return Response({'error': 'Missing body parameter'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['DELETE'])
 def deleteNote(request, pk):
-    note = Note.objects.get(id = pk)
-    note.delete()
-    return Response('Successfully deleted the note')
+    try:
+        note = Note.objects.get(id=pk)
+        note.delete()
+        return Response('Successfully deleted the note')
+    except Note.DoesNotExist:
+        return Response({'error': 'Note does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
