@@ -2,7 +2,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
+import 'package:notes_app_with_django/update.dart';
 import 'note.dart';
+import 'urls.dart';
+import 'create.dart';
 
 void main() {
   runApp(const MyApp());
@@ -35,9 +38,10 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final String notesUrl = '${URLs.baseUrl}${URLs.notes}';
   List<Note> notes = [];
   Client client = http.Client();
-  final Uri linkUrl = Uri.parse("https://siddhant742.pythonanywhere.com/notes/");
+  // final Uri linkUrl = Uri.parse("https://siddhant742.pythonanywhere.com/notes/");
 
   @override
   void initState() {
@@ -47,18 +51,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _retrieveNotes() async {
     notes = [];
-    List response = jsonDecode( (await client.get(linkUrl)).body);
-    final List<dynamic> data = jsonDecode(response.body);u
+    List response = jsonDecode((await client.get(URLs.notes)).body);
     response.forEach((element) {
       notes.add(Note.fromMap(element));
     });
-    setState(() {
-      notes = data.map((element) => Note.fromMap(element)).toList();
-    });
+    setState(() {});
   }
 
-  void _deleteNote(int id) {
-    client.delete(deleteUrl())
+  void _deleteNote(int id) async {
+    await client.delete(URLs.deleteNoteUrl(id));
+    _retrieveNotes();
   }
 
   @override
@@ -69,7 +71,6 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: RefreshIndicator(
-
         onRefresh: () async {
           _retrieveNotes();
         },
@@ -78,14 +79,32 @@ class _MyHomePageState extends State<MyHomePage> {
           itemBuilder: (BuildContext context, int index) {
             return ListTile(
               title: Text(notes[index].note),
-              onTap: (){},
-              trailing: IconButton(onPressed: (){}, icon: Icon(Icons.delete)),
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => UpdatePage(
+                            client: client,
+                            id: notes[index].id,
+                            note: notes[index].note)));
+              },
+              trailing: IconButton(
+                onPressed: () {
+                  _deleteNote(notes[index].id);
+                },
+                icon: Icon(
+                  Icons.delete,
+                ),
+              ),
             );
           },
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: (){},
+        onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) => CreatePage(
+                  client: client,
+                ))),
         tooltip: 'Add Note',
         child: const Icon(Icons.add),
       ),
