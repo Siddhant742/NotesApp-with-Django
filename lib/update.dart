@@ -24,7 +24,7 @@ class _UpdatePageState extends State<UpdatePage> {
     }
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create Note'),
+        title: Text('Update Note'),
       ),
       body: Column(
         children: [
@@ -35,7 +35,7 @@ class _UpdatePageState extends State<UpdatePage> {
           ElevatedButton(
               onPressed: () {widget.client.put(URLs.updateNoteUrl(widget.id), body: {'body' : controller.text});
               Navigator.pop(context);},
-              child: Text('Create Note'))
+              child: Text('Update Note'))
         ],
       ),
     );}
